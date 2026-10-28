@@ -120,7 +120,8 @@
         #autoclick-btn:hover,
         #refresh-favicon-btn:hover,
         #bgrun-btn:hover,
-        #mute-btn:hover {
+        #mute-btn:hover,
+        #info-btn:hover {
             transform: translateY(-1px);
             border-color: rgba(255, 255, 255, 0.24);
             background: rgba(255, 255, 255, 0.11);
@@ -192,7 +193,8 @@
         #autoclick-btn,
         #refresh-favicon-btn,
         #bgrun-btn,
-        #mute-btn {
+        #mute-btn,
+        #info-btn {
             height: 42px;
             width: 48px;
             border-radius: 10px;
@@ -213,7 +215,8 @@
 
         #refresh-favicon-btn,
         #bgrun-btn,
-        #mute-btn {
+        #mute-btn,
+        #info-btn {
             margin-left: 6px;
         }
 
@@ -227,7 +230,8 @@
         #autoclick-btn svg,
         #refresh-favicon-btn svg,
         #bgrun-btn svg,
-        #mute-btn svg {
+        #mute-btn svg,
+        #info-btn svg {
             width: 22px;
             height: 22px;
             display: block;
@@ -1133,10 +1137,23 @@
             applyBackgroundRunState();
         }
 
+        function ensureInfoButton() {
+            if (document.getElementById("info-btn")) return;
+            const btn = document.createElement("button");
+            btn.id = "info-btn";
+            btn.type = "button";
+            btn.textContent = "i";
+            btn.title = "Open Chat";
+            btn.setAttribute("aria-label", "Open Chat");
+            btn.onclick = openChatTab;
+            tabBar.appendChild(btn);
+        }
+
         function ensureMuteButton() {
             ensureAutoclickButton();
             ensureRefreshFaviconButton();
             ensureBackgroundRunButton();
+            ensureInfoButton();
             if (document.getElementById("mute-btn")) return;
             const btn = document.createElement("button");
             btn.id = "mute-btn";
@@ -2333,6 +2350,28 @@
             } else {
                 alert("Game list is still loading or empty!");
             }
+        }
+
+        function openChatTab() {
+            const id = "chat";
+            const title = "Chat";
+
+            if (tabs.has(id)) {
+                activateTab(id);
+                return;
+            }
+
+            const tab = openLoadingTab(id, title);
+            const iframe = document.createElement("iframe");
+            iframe.className = "game-frame";
+            iframe.title = "Chat";
+            iframe.src = "https://editor.p5js.org/jace01b/full/mYFtQwQgD#play-sketch";
+            iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-pointer-lock");
+            iframe.setAttribute("allow", "autoplay; fullscreen; gamepad; accelerometer; gyroscope");
+            iframe.allowFullscreen = true;
+            tab.panel.innerHTML = "";
+            tab.panel.appendChild(iframe);
+            activateTab(id);
         }
 
         function openFormTab() {
