@@ -444,6 +444,28 @@
             color: #34a1eb;
         }
 
+        .game-site-list {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 8px auto 18px;
+        }
+
+        .game-site-btn {
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(86, 26, 134, 0.8);
+            color: white;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .game-site-btn:hover {
+            background: #a369d3;
+        }
+
         .letter-header {
             color: white;
             font-size: 32px;
@@ -930,6 +952,9 @@
                     <button id="open-recent-btn" class="btn-outline">Open Recent Games</button>
                 </h2>
 
+                <h2 class="subheading">Game Sites:</h2>
+                <div id="game-site-list" class="game-site-list" aria-label="Game sites"></div>
+
                 <h2 class="subheading">
                     Make a sugestion:
                     <button id="open-form-btn" class="btn-outline">Open Form</button>
@@ -962,6 +987,14 @@
 
 
     <script>
+        const GAME_SITES = [
+            {
+                id: "nature",
+                name: "Nature",
+                url: "https://raw.githubusercontent.com/ethanchester/schoolisbootybro/refs/heads/main/nature.html"
+            }
+        ];
+
         const GAME_BASES = [
             "https://cdn.jsdelivr.net/gh/bubbls/ugs-singlefile@latest/UGS-Files/",
             "https://api.codetabs.com/v1/proxy/?quest=https://raw.githubusercontent.com/bubbls/ugs-singlefile/main/UGS-Files/",
@@ -2352,6 +2385,55 @@
             }
         }
 
+        function renderGameSites() {
+            const list = document.getElementById("game-site-list");
+            if (!list) return;
+
+            list.innerHTML = "";
+            GAME_SITES.forEach(site => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "game-site-btn";
+                button.textContent = site.name;
+                button.onclick = () => openGameSiteTab(site);
+                list.appendChild(button);
+            });
+        }
+
+        async function openGameSiteTab(site) {
+            const id = `site-${site.id}`;
+            const title = site.name;
+
+            if (tabs.has(id)) {
+                activateTab(id);
+                return;
+            }
+
+            const tab = openLoadingTab(id, title);
+            try {
+                const response = await fetch(site.url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+                let html = await response.text();
+                html = injectBaseHref(injectAutoclickSupport(injectMuteSupport(html, isMuted)), site.url);
+
+                const iframe = document.createElement("iframe");
+                iframe.className = "game-frame";
+                iframe.title = title;
+                iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-popups allow-modals");
+                iframe.referrerPolicy = "no-referrer";
+                iframe.srcdoc = html;
+                applyMuteToIframe(iframe);
+                tab.panel.replaceChildren(iframe);
+            } catch (err) {
+                const loadingText = tab.panel.querySelector(`#loading-text-${id}`);
+                if (loadingText) {
+                    loadingText.textContent = `Failed to load ${sanitizeTitle(title)}: ${err.message}`;
+                    loadingText.style.color = "#ff5555";
+                }
+            }
+        }
+
         function openChatTab() {
             const id = "chat";
             const title = "Chat";
@@ -2404,7 +2486,7 @@
             if (typeof files === "undefined") {
                 setTimeout(initWhenReady, 50); return;
             }
-            ensureHomeTab(); ensureMuteButton(); generateAllSections();
+            ensureHomeTab(); ensureMuteButton(); generateAllSections(); renderGameSites();
             activateTab("home"); saveMuteAndApply(); document.title = "New tab";
         }
         initWhenReady();
