@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Nature</title>
+
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@100;200;300;400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --accent: #00ffaa;
+            --accent-rgb: 0, 255, 170;
+            --accent-dim: #34d399;
+            --accent-dim-rgb: 52, 211, 153;
+            --bg-base: #020b06;
+            --bg-grad-1: rgba(2, 11, 6, 0.88);
+            --bg-grad-2: rgba(4, 18, 10, 0.95);
+            --panel-bg: rgba(6, 26, 14, 0.65);
+            --panel-inner: rgba(2, 11, 6, 0.6);
+            --border-color: rgba(52, 211, 153, 0.35);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(var(--accent-dim-rgb), 0.25) 0%, transparent 60%),
+                radial-gradient(circle at 100% 100%, rgba(var(--accent-rgb), 0.15) 0%, transparent 50%),
+                linear-gradient(var(--bg-grad-1), var(--bg-grad-2));
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+            color: #ecfdf5;
+            transition: background-color 0.4s ease, background-image 0.4s ease;
+        }
+
+        .thin-title { font-weight: 100; letter-spacing: 0.35em; }
+        .thin-subtitle { font-weight: 200; letter-spacing: 0.25em; }
+        .thin-text { font-weight: 200; letter-spacing: 0.05em; }
+
+        #particle-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .cursor-glow {
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(var(--accent-rgb), 0.12) 0%, rgba(var(--accent-dim-rgb), 0.04) 45%, rgba(0, 0, 0, 0) 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+            transition: transform 0.04s linear;
+        }
+
+        /* VIEW SWITCHING & OPENING ANIMATION */
+        .view {
+            display: none;
+            position: relative;
+            z-index: 3;
+            width: 100%;
+            min-height: 100vh;
+            opacity: 0;
+        }
+
+        .view.active {
+            display: flex;
+            flex-direction: column;
+            animation: viewOpen 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes viewOpen {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.97);
+                filter: blur(8px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                filter: blur(0px);
+            }
+        }
+
+        .glass-panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: background 0.4s ease, border-color 0.4s ease;
+        }
+
+        /* GAME ICON CARD STYLING */
+        .game-card {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            border-radius: 1rem;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background-color: var(--panel-inner);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .game-card img {
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .game-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 20px rgba(var(--accent-rgb), 0.4);
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        .game-card:hover img {
+            transform: scale(1.12);
+        }
+
+        /* MOVIE BANNER CARD STYLING */
+        .video-card {
+            position: relative;
+            aspect-ratio: 2 / 3;
+            border-radius: 1rem;
+            overflow: hidden;
+            cursor: pointer;
+            border: 1px solid var(--border-color);
+            background-color: var(--panel-inner);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .video-card img {
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 25px rgba(var(--accent-rgb), 0.45);
+            transform: translateY(-6px) scale(1.02);
+        }
+
+        .video-card:hover img {
+            transform: scale(1.12);
+        }
+
+        /* CLEAN ICON BUTTON STYLES WITH EXPLICIT LABELS UNDERNEATH */
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: rgba(236, 253, 245, 0.75);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            cursor: pointer;
+        }
+
+        .nav-btn:hover {
+            color: var(--accent);
+            transform: translateY(-4px) scale(1.15);
+            filter: drop-shadow(0 0 16px rgba(var(--accent-rgb), 0.9));
+        }
+
+        .nav-btn .nav-text {
+            font-size: 0.75rem;
+            font-weight: 400;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--accent-dim);
+            transition: color 0.3s ease;
+        }
+
+        .nav-btn:hover .nav-text {
+            color: var(--accent);
+        }
+
+        .btn-emerald {
+            background: rgba(var(--accent-dim-rgb), 0.15);
+            border: 1px solid var(--border-color);
+            color: #ecfdf5;
+            font-weight: 200;
+            letter-spacing: 0.2em;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(var(--accent-dim-rgb), 0.15);
+        }
+
+        .btn-emerald:hover {
+            background: rgba(var(--accent-rgb), 0.25);
+            border-color: var(--accent);
+            box-shadow: 0 0 25px rgba(var(--accent-rgb), 0.4);
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+
+        /* CATEGORY BUTTONS */
+        .category-btn {
+            padding: 0.5rem 1.25rem;
+            border-radius: 9999px;
+            border: 1px solid var(--border-color);
+            background-color: var(--panel-inner);
+            color: rgba(236, 253, 245, 0.7);
+            font-weight: 300;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .category-btn:hover {
+            border-color: var(--accent-dim);
+            color: #ffffff;
+        }
+
+        .category-btn.active {
+            border-color: var(--accent);
+            background-color: rgba(var(--accent-rgb), 0.2);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(var(--accent-rgb), 0.3);
+        }
+
+        /* HOMEPAGE TITLE HOVER EFFECTS */
+        .evade-title {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 100;
+            letter-spacing: 0.3em;
+            display: flex;
+            justify-content: center;
+            user-select: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .evade-letter {
+            display: inline-block;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), color 0.25s ease, text-shadow 0.25s ease;
+            color: #ffffff;
+            text-shadow: 0 0 12px rgba(var(--accent-dim-rgb), 0.6), 0 0 25px rgba(var(--accent-rgb), 0.3);
+            animation: pulseGlow 4s infinite alternate ease-in-out;
+            cursor: pointer;
+        }
+
+        .evade-letter:hover {
+            transform: translateY(-12px) scale(1.2);
+            color: var(--accent);
+            text-shadow: 0 0 25px rgba(var(--accent-rgb), 1), 0 0 50px rgba(var(--accent-rgb), 0.8), 0 0 80px rgba(var(--accent-dim-rgb), 0.6);
+            animation-play-state: paused;
+        }
+
+        @keyframes pulseGlow {
+            0% { text-shadow: 0 0 10px rgba(var(--accent-dim-rgb), 0.5), 0 0 20px rgba(var(--accent-rgb), 0.2); }
+            100% { text-shadow: 0 0 18px rgba(var(--accent-dim-rgb), 0.9), 0 0 35px rgba(var(--accent-rgb), 0.6), 0 0 55px rgba(var(--accent-dim-rgb), 0.3); }
+        }
+
+        /* Dynamic Theme Helpers */
+        .text-theme-accent { color: var(--accent); }
+        .text-theme-dim { color: var(--accent-dim); }
+        .fill-theme-accent { fill: var(--accent); }
+        .border-theme { border-color: var(--border-color) !important; }
+        .bg-theme-inner { background-color: var(--panel-inner); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: var(--panel-bg); border-radius: 4px; border: 1px solid var(--border-color); }
+        ::-webkit-scrollbar-thumb:hover { background: var(--accent-dim); }
+
+        .modal-backdrop {
+            background: rgba(2, 11, 6, 0.85);
+            backdrop-filter: blur(16px);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-emerald-500 selection:text-black">
+
+    <canvas id="particle-canvas"></canvas>
+    <div class="cursor-glow" id="cursor-glow"></div>
+
+    <!-- HOME VIEW -->
+    <div id="home-view" class="view active items-center justify-center p-6">
+        <div class="home-container glass-panel p-8 sm:p-12 md:p-16 rounded-3xl max-w-2xl w-full text-center relative z-10 my-auto">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-theme-inner border border-theme mb-8">
+                <span class="w-2 h-2 rounded-full animate-pulse" style="background-color: var(--accent);"></span>
+                <span class="text-xs font-light tracking-widest text-theme-dim uppercase">Made By: Bubby</span>
+            </div>
+
+            <div class="evade-title" id="evade-title">
+                <span class="evade-letter">N</span>
+                <span class="evade-letter">A</span>
+                <span class="evade-letter">T</span>
+                <span class="evade-letter">U</span>
+                <span class="evade-letter">R</span>
+                <span class="evade-letter">E</span>
+            </div>
+
+            <p class="thin-subtitle text-theme-dim text-sm sm:text-base md:text-lg mb-8 max-w-xl mx-auto uppercase opacity-90">
+                Still in the works some games might not work!
+            </p>
+
+            <!-- LARGE ICONS WITH CLEAR EXPLICIT LABELS UNDERNEATH -->
+            <div class="flex items-center justify-center gap-8 sm:gap-12 my-4">
+                <!-- Game Controller = Games -->
+                <button onclick="showView('gallery-view')" class="nav-btn p-2" title="Games">
+                    <svg class="nav-icon w-11 h-11 sm:w-14 sm:h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 5H9a7 7 0 00-7 7v4a3 3 0 003 3h12a3 3 0 003-3v-4a7 7 0 00-7-7zM6 12h4m-2-2v4m10-2h.01M16 10h.01"/>
+                    </svg>
+                    <span class="nav-text">Games</span>
+                </button>
+
+                <!-- Video Camera = Videos -->
+                <button onclick="showView('videos-view')" class="nav-btn p-2" title="Movies">
+                    <svg class="nav-icon w-11 h-11 sm:w-14 sm:h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                    </svg>
+                    <span class="nav-text">Movies</span>
+                </button>
+
+                <!-- Gear = Settings -->
+                <button onclick="showView('settings-view')" class="nav-btn p-2" title="Settings">
+                    <svg class="nav-icon w-11 h-11 sm:w-14 sm:h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    </svg>
+                    <span class="nav-text">Settings</span>
+                </button>
+
+                <!-- Eye Disguise = Cloak -->
+                <button onclick="openPageInAboutBlank()" class="nav-btn p-2" title="Cloak Page">
+                    <svg class="nav-icon w-11 h-11 sm:w-14 sm:h-14" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13.875 18.825A10.05 10.05 0 0112 19c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
+                    </svg>
+                    <span class="nav-text">Cloak</span>
+                </button>
+            </div>
+
+            <!-- Sleek Individual Stat Cards -->
+            <div class="grid grid-cols-3 gap-3 sm:gap-4 mt-10 pt-8 border-t border-theme">
+                <div class="p-3.5 rounded-2xl bg-theme-inner border border-theme transition-all duration-300 hover:border-theme">
+                    <div class="text-xl sm:text-2xl font-extralight text-theme-accent">60+</div>
+                    <div class="text-[10px] sm:text-xs font-light tracking-wider uppercase mt-1 text-theme-dim opacity-80">Games</div>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-theme-inner border border-theme transition-all duration-300 hover:border-theme">
+                    <div class="text-xl sm:text-2xl font-extralight text-theme-accent">0 ms</div>
+                    <div class="text-[10px] sm:text-xs font-light tracking-wider uppercase mt-1 text-theme-dim opacity-80">Input Lag</div>
+                </div>
+                <div class="p-3.5 rounded-2xl bg-theme-inner border border-theme transition-all duration-300 hover:border-theme">
+                    <div class="text-xl sm:text-2xl font-extralight text-theme-accent">100%</div>
+                    <div class="text-[10px] sm:text-xs font-light tracking-wider uppercase mt-1 text-theme-dim opacity-80">Free Access</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GALLERY VIEW -->
+    <div id="gallery-view" class="view p-4 sm:p-8 md:p-12">
+        <div class="max-w-7xl w-full mx-auto">
+            <header class="glass-panel p-6 sm:p-8 rounded-3xl mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-2xl bg-theme-inner border border-theme flex items-center justify-center text-theme-accent">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 5H9a7 7 0 00-7 7v4a3 3 0 003 3h12a3 3 0 003-3v-4a7 7 0 00-7-7zM6 12h4m-2-2v4m10-2h.01M16 10h.01"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="thin-title text-2xl sm:text-3xl text-emerald-50 uppercase">Nature: Games</h1>
+                        <p class="thin-text text-xs text-theme-dim">Select a title to launch game</p>
+                    </div>
+                </div>
+
+                <div class="relative w-full md:w-80">
+                    <input type="text" id="game-search" oninput="filterGames()" placeholder="Search games..." 
+                        class="w-full bg-theme-inner border border-theme rounded-full px-5 py-3 pl-11 text-sm text-emerald-100 placeholder-emerald-700 focus:outline-none focus:border-theme transition-all font-light tracking-wide">
+                    <svg class="w-4 h-4 text-theme-dim absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+
+                <div class="flex items-center gap-6 sm:gap-8">
+                    <button onclick="showView('Movies-view')" class="nav-btn p-1.5" title="Movies">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="nav-text">Movies</span>
+                    </button>
+                    <button onclick="showView('settings-view')" class="nav-btn p-1.5" title="Settings">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span class="nav-text">Settings</span>
+                    </button>
+                    <button onclick="openPageInAboutBlank()" class="nav-btn p-1.5" title="Cloak Page">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13.875 18.825A10.05 10.05 0 0112 19c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
+                        </svg>
+                        <span class="nav-text">Cloak</span>
+                    </button>
+                    <button onclick="showView('home-view')" class="nav-btn p-1.5" title="Home">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="nav-text">Home</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 text-xs no-scrollbar">
+                <button onclick="setCategory('all')" class="category-btn active">All Games</button>
+                <button onclick="setCategory('favorites')" class="category-btn">Favorites</button>
+                <button onclick="setCategory('Action')" class="category-btn">Action</button>
+                <button onclick="setCategory('Arcade')" class="category-btn">Arcade</button>
+                <button onclick="setCategory('Driving')" class="category-btn">Driving</button>
+                <button onclick="setCategory('Casual')" class="category-btn">Casual</button>
+            </div>
+
+            <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6"></div>
+
+            <div id="no-results" class="hidden text-center py-20 glass-panel rounded-3xl">
+                <p id="no-results-title" class="thin-title text-2xl text-theme-dim mb-2">No Games Found</p>
+                <p id="no-results-desc" class="thin-text text-sm text-emerald-500/70">Try searching for another keyword or clear your filter.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIDEOS VIEW -->
+    <div id="videos-view" class="view p-4 sm:p-8 md:p-12">
+        <div class="max-w-7xl w-full mx-auto">
+            <header class="glass-panel p-6 sm:p-8 rounded-3xl mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-2xl bg-theme-inner border border-theme flex items-center justify-center text-theme-accent">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="thin-title text-2xl sm:text-3xl text-emerald-50 uppercase">Nature: Movies</h1>
+                        <p class="thin-text text-xs text-theme-dim">Select a banner to watch movie</p>
+                    </div>
+                </div>
+
+                <div class="relative w-full md:w-80">
+                    <input type="text" id="video-search" oninput="filterVideos()" placeholder="Search videos..." 
+                        class="w-full bg-theme-inner border border-theme rounded-full px-5 py-3 pl-11 text-sm text-emerald-100 placeholder-emerald-700 focus:outline-none focus:border-theme transition-all font-light tracking-wide">
+                    <svg class="w-4 h-4 text-theme-dim absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+
+                <div class="flex items-center gap-6 sm:gap-8">
+                    <button onclick="showView('gallery-view')" class="nav-btn p-1.5" title="Games">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 5H9a7 7 0 00-7 7v4a3 3 0 003 3h12a3 3 0 003-3v-4a7 7 0 00-7-7zM6 12h4m-2-2v4m10-2h.01M16 10h.01"/>
+                        </svg>
+                        <span class="nav-text">Games</span>
+                    </button>
+                    <button onclick="showView('settings-view')" class="nav-btn p-1.5" title="Settings">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                        <span class="nav-text">Settings</span>
+                    </button>
+                    <button onclick="openPageInAboutBlank()" class="nav-btn p-1.5" title="Cloak Page">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M13.875 18.825A10.05 10.05 0 0112 19c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24M1 1l22 22"/>
+                        </svg>
+                        <span class="nav-text">Cloak</span>
+                    </button>
+                    <button onclick="showView('home-view')" class="nav-btn p-1.5" title="Home">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="nav-text">Home</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 text-xs no-scrollbar">
+                <button onclick="setVideoCategory('all')" class="video-category-btn category-btn active">All Videos</button>
+                <button onclick="setVideoCategory('favorites')" class="video-category-btn category-btn">Favorites</button>
+                <button onclick="setVideoCategory('Movies')" class="video-category-btn category-btn">Movies</button>
+                <button onclick="setVideoCategory('Shows')" class="video-category-btn category-btn">Shows</button>
+                <button onclick="setVideoCategory('Documentary')" class="video-category-btn category-btn">Documentary</button>
+                <button onclick="setVideoCategory('Other')" class="video-category-btn category-btn">Other</button>
+            </div>
+
+            <div id="videos-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6"></div>
+
+            <div id="no-video-results" class="hidden text-center py-20 glass-panel rounded-3xl">
+                <p id="no-video-results-title" class="thin-title text-2xl text-theme-dim mb-2">No Videos Found</p>
+                <p id="no-video-results-desc" class="thin-text text-sm text-emerald-500/70">Try searching for another keyword or clear your filter.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- SETTINGS VIEW -->
+    <div id="settings-view" class="view p-4 sm:p-8 md:p-12">
+        <div class="max-w-4xl w-full mx-auto">
+            <header class="glass-panel p-6 sm:p-8 rounded-3xl mb-8 flex flex-col sm:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-2xl bg-theme-inner border border-theme flex items-center justify-center text-theme-accent">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="thin-title text-2xl sm:text-3xl text-emerald-50 uppercase">Settings</h1>
+                        <p class="thin-text text-xs text-theme-dim">Customize your visual layout & preferences</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-6 sm:gap-8">
+                    <button onclick="showView('gallery-view')" class="nav-btn p-1.5" title="Games">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 5H9a7 7 0 00-7 7v4a3 3 0 003 3h12a3 3 0 003-3v-4a7 7 0 00-7-7zM6 12h4m-2-2v4m10-2h.01M16 10h.01"/>
+                        </svg>
+                        <span class="nav-text">Games</span>
+                    </button>
+                    <button onclick="showView('videos-view')" class="nav-btn p-1.5" title="Videos">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                        </svg>
+                        <span class="nav-text">Videos</span>
+                    </button>
+                    <button onclick="showView('home-view')" class="nav-btn p-1.5" title="Home">
+                        <svg class="nav-icon w-8 h-8 sm:w-9 sm:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 01-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                        <span class="nav-text">Home</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="space-y-6">
+                <!-- Color Schemes Section -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl">
+                    <h2 class="thin-title text-lg text-emerald-100 uppercase mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full" style="background-color: var(--accent);"></span>
+                        Color Scheme
+                    </h2>
+                    <p class="thin-text text-xs text-theme-dim mb-6">Choose a theme preset to dynamically adjust background colors, glows, outlines, and panels.</p>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4" id="theme-presets"></div>
+                </div>
+
+                <!-- Custom Tab Title Cloak -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl">
+                    <h2 class="thin-title text-lg text-emerald-100 uppercase mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full" style="background-color: var(--accent);"></span>
+                        Tab Title Disguise
+                    </h2>
+                    <p class="thin-text text-xs text-theme-dim mb-4">Change what name shows up on your browser tab.</p>
+
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <input type="text" id="tab-title-input" placeholder="e.g. Google, Canvas, Nature" 
+                            class="flex-1 bg-theme-inner border border-theme rounded-full px-5 py-3 text-sm text-emerald-100 placeholder-emerald-700 focus:outline-none focus:border-theme transition-all font-light">
+                        <button onclick="saveTabTitle()" class="btn-emerald px-8 py-3 rounded-full text-xs uppercase">
+                            Apply
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Visual Effects Toggles -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl">
+                    <h2 class="thin-title text-lg text-emerald-100 uppercase mb-2 flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full" style="background-color: var(--accent);"></span>
+                        Visual Effects & Layout
+                    </h2>
+                    <p class="thin-text text-xs text-theme-dim mb-6">Enable or disable graphics features and adjust layout styles.</p>
+
+                    <div class="space-y-4">
+                        <!-- Cursor Glow Toggle -->
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-theme-inner border border-theme">
+                            <div>
+                                <h3 class="text-sm font-light text-emerald-100">Cursor Glow Effect</h3>
+                                <p class="text-xs text-theme-dim opacity-70 font-extralight">Glowing circle following mouse movement</p>
+                            </div>
+                            <button onclick="toggleSetting('cursorGlow')" id="btn-toggle-cursorGlow" class="btn-emerald px-6 py-2 rounded-full text-xs uppercase">
+                                Enabled
+                            </button>
+                        </div>
+
+                        <!-- Particles Toggle -->
+                        <div class="flex items-center justify-between p-4 rounded-2xl bg-theme-inner border border-theme">
+                            <div>
+                                <h3 class="text-sm font-light text-emerald-100">Background Particles</h3>
+                                <p class="text-xs text-theme-dim opacity-70 font-extralight">Floating ambient particles animation canvas</p>
+                            </div>
+                            <button onclick="toggleSetting('particles')" id="btn-toggle-particles" class="btn-emerald px-6 py-2 rounded-full text-xs uppercase">
+                                Enabled
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reset All Settings -->
+                <div class="glass-panel p-6 sm:p-8 rounded-3xl flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-light text-emerald-100">Reset to Defaults</h3>
+                        <p class="text-xs text-theme-dim opacity-70 font-extralight">Restore original emerald theme and standard settings</p>
+                    </div>
+                    <button onclick="resetSettings()" class="px-6 py-2.5 rounded-full border border-red-500/40 bg-red-950/30 text-red-300 text-xs font-light uppercase tracking-wider hover:bg-red-900/50 transition-all">
+                        Reset All
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIRECT MEDIA PLAYER OVERLAY (GAMES & VIDEOS) -->
+    <div id="game-player-modal" class="fixed inset-0 z-50 hidden modal-backdrop flex flex-col items-center justify-center p-2 sm:p-4">
+        <div class="glass-panel rounded-2xl w-full max-w-6xl h-[92vh] flex flex-col overflow-hidden border border-theme shadow-2xl relative">
+            
+            <!-- Control Header Bar -->
+            <div class="flex items-center justify-between p-3 sm:p-4 border-b border-theme bg-theme-inner">
+                <div class="flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full animate-pulse" style="background-color: var(--accent);"></span>
+                    <h3 id="player-game-title" class="thin-title text-base sm:text-lg text-emerald-50 truncate font-medium uppercase tracking-wider">Media Title</h3>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <button onclick="toggleGameFullscreen()" class="btn-emerald px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs uppercase flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
+                        </svg>
+                        Fullscreen
+                    </button>
+                    <button onclick="openCurrentInAboutBlank()" class="btn-emerald px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-xs uppercase flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                        </svg>
+                        About Blank
+                    </button>
+                    <button onclick="closeGamePlayer()" class="px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-red-500/40 bg-red-950/40 text-red-300 text-xs font-light uppercase tracking-wider hover:bg-red-900/60 transition-all flex items-center gap-1.5">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                        Close
+                    </button>
+                </div>
+            </div>
+
+            <!-- Embedded Frame -->
+            <div class="flex-1 w-full bg-black relative" id="iframe-container">
+                <iframe id="game-iframe" class="w-full h-full border-0" allowfullscreen allow="autoplay; gamepad; microphone; camera; encrypted-media"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const gameDatabase = [
+            { id: 1, name: "Game Request", category: "Casual", src: "https://i.ibb.co/rGPGKmY7/google-forms-tutorial.png", url: "https://forms.gle/2cC4K2Ft9Xx6muJv5", desc: "Gusy PLEASE JOIN" },
+            { id: 2, name: "Drift boss", category: "Driving", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/276.png", url: "https://natureisbestlol.weebly.com/id2.html", desc: "click space to steer a track with a car." },
+            { id: 3, name: "Hollow Knight", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/468.png", url: "https://natureisbestlol.weebly.com/id3.html", desc: "Idk what to put here." },
+            { id: 4, name: "OvO", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/1.png", url: "https://natureisbestlol.weebly.com/id7.html", desc: "Basicly Vex but diffrent." },
+            { id: 5, name: "MotoX3M 3", category: "Driving", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/98.png", url: "https://natureisbestlol.weebly.com/id6.html", desc: "Drive a motorcycle through jumps and obsticles." },
+            { id: 6, name: "MotoX3M winter", category: "Driving", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/100.png", url: "https://conservative-coral-bb2ogj6b.edgeone.dev/", desc: "Drive a motorcycle through jumps and obsticles BUT IN WINTER." },
+            { id: 7, name: "MotoX3M spooky", category: "Driving", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/99.png", url: "https://natureisbestlol.weebly.com/id4.html", desc: "Drive a motorcycle through jumps and obsticles BUT ITS SCARY." },
+            { id: 8, name: "Tomb Of The Mask", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/109.png", url: "https://natureisbestlol.weebly.com/id8.html", desc: "Go through a maze like challenge collect coins and dont die." },
+            { id: 9, name: "People Playground", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/194-m.png", url: "https://shocked-red-42elw9i9.edgeone.dev/", desc: "Tourture people set them on fire do whatever you want to them." },
+            { id: 10, name: "Space Waves", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/117.png", url: "https://natureisbestlol.weebly.com/id11.html", desc: "Click to go up dont click to go down us this information as you will." },
+            { id: 11, name: "Drive Mad", category: "Driving", src: "https://play-lh.googleusercontent.com/69T5dvUQ9eoR58EteTt4Aqc-aDytLDakTR65drPMEYE-p_qHH_wIpnS1zAaGuq-16UrZb1jjztTeMLCW6oekaw", url: "https://natureisbestlol.weebly.com/id10.html", desc: "Drive your monster truck across hazardous bridges and tricky obstacles." },
+            { id: 12, name: "Funny Shooter 2", category: "Action", src: "https://i.ibb.co/7JHG0Grw/funnyshooter2.jpg", url: "https://natureisbestlol.weebly.com/id14.html", desc: "Colorful FPS game against bizarre enemy creatures in weird worlds." },
+            { id: 13, name: "Borato", category: "Action", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/723.png", url: "https://natureisbestlol.weebly.com/id12.html", desc: "Idk what to put here." },
+            { id: 14, name: "Snow rider", category: "Arcade", src: "https://i.ibb.co/pBhJjdYD/119.png", url: "https://natureisbestlol.weebly.com/id16.html", desc: "Doge obsticles on a sled while getting faster the farther you go." },
+            { id: 15, name: "Tunnel Rush", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/206.png", url: "https://natureisbestlol.weebly.com/id18.html", desc: "A dropper like game dodge obsticles but it may make you dizzy." },
+            { id: 16, name: "Bowmasters", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/0.png", url: "https://natureid16.edgeone.dev/", desc: "Idk What to put here :P." },
+            { id: 17, name: "Geometry Dash", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/868.png", url: "https://natureisbestlol.weebly.com/id20.html", desc: "Jump to avoid obsticles play levels in diffrent dificulty." },
+            { id: 18, name: "Paper IO 2", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/102.png", url: "https://natureisbestlol.weebly.com/id21.html", desc: "Conquer as much territory as possible in smooth shapes." },
+            { id: 19, name: "Stick War", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/666.png", url: "https://whitescreen.im/bouncing-dvd-logo", desc: "Make stickman battle each other grow your army to conquer (BROKEN)." },
+            { id: 20, name: "Minecraft 1.8.8", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/181.png", url: "https://natureid20.edgeone.dev/", desc: "we ALL dont need this to be here gng." },
+            { id: 21, name: "Top speed racing 3D", category: "Driving", src: "https://i.ibb.co/mr1chzRb/download-30.jpg", url: "https://particular-purple-dsw8rxyf.edgeone.dev/", desc: "Idk what to put here :P" },
+            { id: 22, name: "Escape road 2", category: "Driving", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/265.png", url: "https://natureisbestlol.weebly.com/id22.html", desc: "Drive a car while escaping the cops steal cars, just dont get caught!" },
+            { id: 23, name: "Stickman hook", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/11.png", url: "https://natureid23.edgeone.dev/", desc: "Idk what to put here :P." },
+            { id: 24, name: "Cookie Clicker", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/82.png", url: "https://natureisbestlol.weebly.com/id23.html", desc: "Click a cookie for money." },
+            { id: 25, name: "Ragdoll hit", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/44.png", url: "https://perfect-yellow-t8wutgqp.edgeone.dev/", desc: "Idk what to put here :P." },
+            { id: 26, name: "Ragdoll archers", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/186.png", url: "https://wittering-beige-fnqyhube.edgeone.dev/", desc: "Idk what to put here :P." },
+            { id: 27, name: "Retro bowl", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/33.png", url: "https://appropriate-copper-gg99x2k5.edgeone.dev/", desc: "Idk what to put here :P." },
+            { id: 28, name: "Granny", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/90.png", url: "https://elderly-brown-a8c1vxcp.edgeone.dev/", desc: "Your traped in grannys house try to survive the night (BROKEN)." },
+            { id: 29, name: "Granny 2", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/125.png", url: "https://responsible-crimson-oyzekgn8.edgeone.dev/", desc: "Your traped in grannys house try to survive the night." },
+            { id: 30, name: "Granny 3", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/852.png", url: "https://literary-teal-s25tccwt.edgeone.dev/", desc: "Your traped in grannys house try to survive the night. (BROKEN)" },
+            { id: 31, name: "Run 3", category: "Arcade", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/177.png", url: "https://parliamentary-aqua-agkaheqf.edgeone.dev/", desc: "Idk what to put here :P." },
+            { id: 32, name: "Soundboard", category: "Casual", src: "https://cdn.jsdelivr.net/gh/freebuisness/covers@main/179.png", url: "https://pleased-aqua-ariz7bkc.edgeone.dev/", desc: "Guys PLEASE dont use in class PLEASE." },
+            { id: 33, name: "Basket Bros", category: "Arcade", src: "https://i.ibb.co/xycfp2Q/download-35.jpg", url: "https://overwhelming-indigo-w4rdt4hp.edgeone.dev/", desc: "Idk what to put here :P" },
+            { id: 34, name: "Polytrack", category: "driving", src: "https://i.ibb.co/zVSqwXRK/download-36.jpg", url: "https://natureisbestlol.weebly.com/id13.html", desc: "You drive a car on a track" },
+            { id: 35, name: "Coming Soon!", category: "Casual", src: "", url: "", desc: "Coming soon!" },
+            { id: 36, name: "Coming Soon!", category: "Driving", src: "", url: "", desc: "Coming soon!" },
+            { id: 37, name: "Coming Soon!", category: "Casual", src: "", url: "", desc: "Coming soon!" },
+            { id: 38, name: "Coming Soon!", category: "Arcade", src: "", url: "", desc: "Coming soon!" },
+            { id: 39, name: "Coming Soon!", category: "Casual", src: "", url: "", desc: "Coming soon!" },
+            { id: 40, name: "Coming Soon!", category: "Casual", src: "", url: "", desc: "Coming soon!" }
+        ];
+
+        const videoDatabase = [
+            { id: 101, name: "Spiderman: Brand new day", category: "Movies", src: "https://i.ibb.co/5WRnM7JT/Spider-Man-Brand-New-Day-poster-jpg.webp", url: "https://drive.google.com/file/d/1igTVRF_Q_kQcoybMpPNWYHu2kZLuaVrK/view", desc: "Idk" },
+            { id: 102, name: "Backrooms", category: "Movies", src: "https://i.ibb.co/2037Ccbg/unnamed.webp", url: "https://drive.google.com/file/d/18nLws3FusSwXgQxTmAv-JmQijlCytXzD/view", desc: "Idk" },
+            { id: 103, name: "Home alone", category: "Movies", src: "https://i.ibb.co/Pv6Dhrgs/images-21.jpg", url: "https://drive.google.com/file/d/1x3kY-5jtQ2pi_KX6fiESSEEhpQZ40hr0/view", desc: "Google Drive Video Link" },
+            { id: 104, name: "Obsession", category: "Movies", src: "https://i.ibb.co/VWq5YCSK/images-20.jpg", url: "https://drive.google.com/file/d/1bQXOtjLq5VWPf7TGulIbH97MeS9bp40e/view", desc: "Idk" },
+            { id: 105, name: "Coming later.", category: "Shows", src: "", url: "https://i.ibb.co/3YkG06nD/download-31.jpg", desc: "Coming soon!" },
+            { id: 106, name: "Coming later.", category: "Movies", src: "", url: "", desc: "Coming soon!" },
+            { id: 107, name: "Coming later.", category: "Documentary", src: "", url: "", desc: "Coming soon!" },
+            { id: 108, name: "Coming later.", category: "Other", src: "", url: "", desc: "Coming soon!" },
+            { id: 109, name: "Coming later.", category: "Movies", src: "", url: "", desc: "Coming soon!" },
+            { id: 110, name: "Coming later.", category: "Shows", src: "", url: "", desc: "Coming soon!" }
+        ];
+
+        const themePresets = [
+            { 
+                id: 'emerald', 
+                name: 'Emerald Nature', 
+                accent: '#00ffaa', 
+                accentRgb: '0, 255, 170', 
+                dim: '#34d399', 
+                dimRgb: '52, 211, 153',
+                bgBase: '#020b06',
+                bgGrad1: 'rgba(2, 11, 6, 0.88)',
+                bgGrad2: 'rgba(4, 18, 10, 0.95)',
+                panelBg: 'rgba(6, 26, 14, 0.65)',
+                panelInner: 'rgba(2, 11, 6, 0.6)'
+            },
+            { 
+                id: 'violet', 
+                name: 'Cyber Violet', 
+                accent: '#c084fc', 
+                accentRgb: '192, 132, 252', 
+                dim: '#a855f7', 
+                dimRgb: '168, 85, 247',
+                bgBase: '#0b0212',
+                bgGrad1: 'rgba(15, 2, 26, 0.88)',
+                bgGrad2: 'rgba(22, 4, 38, 0.95)',
+                panelBg: 'rgba(24, 6, 40, 0.65)',
+                panelInner: 'rgba(11, 2, 18, 0.6)'
+            },
+            { 
+                id: 'crimson', 
+                name: 'Crimson Flame', 
+                accent: '#ff4d4d', 
+                accentRgb: '255, 77, 77', 
+                dim: '#f87171', 
+                dimRgb: '248, 113, 113',
+                bgBase: '#120204',
+                bgGrad1: 'rgba(26, 2, 6, 0.88)',
+                bgGrad2: 'rgba(38, 4, 10, 0.95)',
+                panelBg: 'rgba(40, 6, 14, 0.65)',
+                panelInner: 'rgba(18, 2, 4, 0.6)'
+            },
+            { 
+                id: 'cyan', 
+                name: 'Neon Cyan', 
+                accent: '#00f0ff', 
+                accentRgb: '0, 240, 255', 
+                dim: '#38bdf8', 
+                dimRgb: '56, 189, 248',
+                bgBase: '#020a12',
+                bgGrad1: 'rgba(2, 16, 26, 0.88)',
+                bgGrad2: 'rgba(4, 24, 38, 0.95)',
+                panelBg: 'rgba(6, 26, 40, 0.65)',
+                panelInner: 'rgba(2, 10, 18, 0.6)'
+            },
+            { 
+                id: 'amber', 
+                name: 'Amber Glow', 
+                accent: '#fbbf24', 
+                accentRgb: '251, 191, 36', 
+                dim: '#f59e0b', 
+                dimRgb: '245, 158, 11',
+                bgBase: '#120b02',
+                bgGrad1: 'rgba(26, 16, 2, 0.88)',
+                bgGrad2: 'rgba(38, 24, 4, 0.95)',
+                panelBg: 'rgba(40, 24, 6, 0.65)',
+                panelInner: 'rgba(18, 11, 2, 0.6)'
+            },
+            { 
+                id: 'rose', 
+                name: 'Sakura Pink', 
+                accent: '#f472b6', 
+                accentRgb: '244, 114, 182', 
+                dim: '#ec4899', 
+                dimRgb: '236, 72, 153',
+                bgBase: '#12020a',
+                bgGrad1: 'rgba(26, 2, 16, 0.88)',
+                bgGrad2: 'rgba(38, 4, 24, 0.95)',
+                panelBg: 'rgba(40, 6, 26, 0.65)',
+                panelInner: 'rgba(18, 2, 10, 0.6)'
+            }
+        ];
+
+        let userSettings = JSON.parse(localStorage.getItem('natureSiteSettings')) || {
+            theme: 'emerald',
+            tabTitle: 'Nature',
+            cursorGlow: true,
+            particles: true
+        };
+
+        let currentCategory = 'all';
+        let currentVideoCategory = 'all';
+        let currentGame = null; 
+        
+        let favorites = (JSON.parse(localStorage.getItem('natureFavorites')) || []).map(Number);
+        let videoFavorites = (JSON.parse(localStorage.getItem('natureVideoFavorites')) || []).map(Number);
+
+        function applySettings() {
+            const activeTheme = themePresets.find(t => t.id === userSettings.theme) || themePresets[0];
+            
+            document.documentElement.style.setProperty('--accent', activeTheme.accent);
+            document.documentElement.style.setProperty('--accent-rgb', activeTheme.accentRgb);
+            document.documentElement.style.setProperty('--accent-dim', activeTheme.dim);
+            document.documentElement.style.setProperty('--accent-dim-rgb', activeTheme.dimRgb);
+            document.documentElement.style.setProperty('--bg-base', activeTheme.bgBase);
+            document.documentElement.style.setProperty('--bg-grad-1', activeTheme.bgGrad1);
+            document.documentElement.style.setProperty('--bg-grad-2', activeTheme.bgGrad2);
+            document.documentElement.style.setProperty('--panel-bg', activeTheme.panelBg);
+            document.documentElement.style.setProperty('--panel-inner', activeTheme.panelInner);
+            document.documentElement.style.setProperty('--border-color', `rgba(${activeTheme.dimRgb}, 0.35)`);
+
+            document.getElementById('page-title').innerText = userSettings.tabTitle || 'Nature';
+            document.getElementById('tab-title-input').value = userSettings.tabTitle || 'Nature';
+
+            const glowEl = document.getElementById('cursor-glow');
+            if (glowEl) glowEl.style.display = userSettings.cursorGlow ? 'block' : 'none';
+
+            const particleEl = document.getElementById('particle-canvas');
+            if (particleEl) particleEl.style.display = userSettings.particles ? 'block' : 'none';
+
+            const btnGlow = document.getElementById('btn-toggle-cursorGlow');
+            if (btnGlow) btnGlow.innerText = userSettings.cursorGlow ? 'Enabled' : 'Disabled';
+
+            const btnParticles = document.getElementById('btn-toggle-particles');
+            if (btnParticles) btnParticles.innerText = userSettings.particles ? 'Enabled' : 'Disabled';
+
+            renderThemeButtons();
+            localStorage.setItem('natureSiteSettings', JSON.stringify(userSettings));
+        }
+
+        function renderThemeButtons() {
+            const container = document.getElementById('theme-presets');
+            if (!container) return;
+            container.innerHTML = '';
+
+            themePresets.forEach(preset => {
+                const isActive = userSettings.theme === preset.id;
+                const btn = document.createElement('button');
+                btn.onclick = () => {
+                    userSettings.theme = preset.id;
+                    applySettings();
+                };
+                btn.className = `p-4 rounded-2xl flex items-center justify-between border transition-all ${isActive ? 'border-2 scale-105 shadow-lg' : 'hover:scale-[1.02]'}`;
+                btn.style.borderColor = isActive ? preset.accent : 'rgba(255,255,255,0.15)';
+                btn.style.backgroundColor = preset.panelInner;
+
+                btn.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="w-4 h-4 rounded-full" style="background: ${preset.accent}; box-shadow: 0 0 10px ${preset.accent}"></span>
+                        <span class="text-xs font-light text-emerald-100">${preset.name}</span>
+                    </div>
+                    ${isActive ? `<span class="text-xs font-semibold" style="color:${preset.accent}">✓</span>` : ''}
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function toggleSetting(key) {
+            userSettings[key] = !userSettings[key];
+            applySettings();
+        }
+
+        function saveTabTitle() {
+            const val = document.getElementById('tab-title-input').value.trim();
+            userSettings.tabTitle = val !== '' ? val : 'Nature';
+            applySettings();
+        }
+
+        function resetSettings() {
+            userSettings = {
+                theme: 'emerald',
+                tabTitle: 'Nature',
+                cursorGlow: true,
+                particles: true
+            };
+            applySettings();
+        }
+
+        function toggleFavorite(event, gameId) {
+            event.stopPropagation();
+            const idNum = Number(gameId);
+            if (favorites.includes(idNum)) {
+                favorites = favorites.filter(id => id !== idNum);
+            } else {
+                favorites.push(idNum);
+            }
+            localStorage.setItem('natureFavorites', JSON.stringify(favorites));
+            renderGallery();
+        }
+
+        function toggleVideoFavorite(event, videoId) {
+            event.stopPropagation();
+            const idNum = Number(videoId);
+            if (videoFavorites.includes(idNum)) {
+                videoFavorites = videoFavorites.filter(id => id !== idNum);
+            } else {
+                videoFavorites.push(idNum);
+            }
+            localStorage.setItem('natureVideoFavorites', JSON.stringify(videoFavorites));
+            renderVideos();
+        }
+
+        function showView(viewId) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            const target = document.getElementById(viewId);
+            target.classList.remove('active');
+            void target.offsetWidth; 
+            target.classList.add('active');
+            window.scrollTo(0, 0);
+        }
+
+        function openPageInAboutBlank() {
+            const win = window.open('about:blank', '_blank');
+            if (!win) {
+                alert("Pop-up blocked! Please allow pop-ups for this site.");
+                return;
+            }
+
+            win.document.body.style.margin = '0';
+            win.document.body.style.height = '100vh';
+            win.document.body.style.overflow = 'hidden';
+            win.document.body.style.backgroundColor = '#020b06';
+
+            const iframe = win.document.createElement('iframe');
+            iframe.style.border = 'none';
+            iframe.style.width = '100vw';
+            iframe.style.height = '100vh';
+            iframe.style.margin = '0';
+
+            win.document.body.appendChild(iframe);
+            iframe.contentDocument.open();
+            iframe.contentDocument.write(document.documentElement.outerHTML);
+            iframe.contentDocument.close();
+        }
+
+        function generateFallbackCard(title, category) {
+            const encodedTitle = encodeURIComponent(title);
+            return `data:image/svg+xml;utf8,
+            <svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300">
+                <rect width="300" height="300" fill="%2304120a"/>
+                <circle cx="150" cy="120" r="60" fill="%230f321e" stroke="%2334d399" stroke-width="1.5" opacity="0.6"/>
+                <path d="M150 80 L180 140 L120 140 Z" fill="%2300ffaa" opacity="0.4"/>
+                <path d="M150 100 L170 140 L130 140 Z" fill="%2310b981" opacity="0.8"/>
+                <text x="50%" y="220" font-family="sans-serif" font-weight="200" font-size="16" fill="%23ecfdf5" text-anchor="middle">${encodedTitle}</text>
+                <text x="50%" y="245" font-family="sans-serif" font-weight="300" font-size="11" fill="%2334d399" text-anchor="middle">${category}</text>
+            </svg>`;
+        }
+
+        function generateFallbackBanner(title, category) {
+            const encodedTitle = encodeURIComponent(title);
+            return `data:image/svg+xml;utf8,
+            <svg xmlns="http://www.w3.org/2000/svg" width="300" height="450" viewBox="0 0 300 450">
+                <rect width="300" height="450" fill="%2304120a"/>
+                <rect x="15" y="15" width="270" height="420" rx="12" fill="%23061a0e" stroke="%2334d399" stroke-width="1" opacity="0.6"/>
+                <circle cx="150" cy="190" r="45" fill="%230f321e" stroke="%2300ffaa" stroke-width="2" opacity="0.7"/>
+                <polygon points="142,170 166,190 142,210" fill="%2300ffaa"/>
+                <text x="50%" y="330" font-family="sans-serif" font-weight="200" font-size="18" fill="%23ecfdf5" text-anchor="middle">${encodedTitle}</text>
+                <text x="50%" y="360" font-family="sans-serif" font-weight="300" font-size="12" fill="%2334d399" text-anchor="middle">${category}</text>
+            </svg>`;
+        }
+
+        function renderGallery() {
+            const grid = document.getElementById('gallery-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const searchQuery = document.getElementById('game-search')?.value.toLowerCase() || '';
+            let visibleCount = 0;
+
+            gameDatabase.forEach(game => {
+                const isFav = favorites.includes(Number(game.id));
+                const matchesCategory = currentCategory === 'all' || 
+                                        (currentCategory === 'favorites' && isFav) || 
+                                        game.category === currentCategory;
+                const matchesSearch = game.name.toLowerCase().includes(searchQuery) || game.category.toLowerCase().includes(searchQuery);
+
+                if (matchesCategory && matchesSearch) {
+                    visibleCount++;
+                    const card = document.createElement('div');
+                    card.className = 'game-card group';
+                    
+                    card.onclick = () => openGame(game);
+
+                    const imgSrc = game.src.trim() !== "" ? game.src : generateFallbackCard(game.name, game.category);
+                    const starColor = isFav ? 'text-theme-accent fill-theme-accent' : 'text-emerald-100 hover:text-emerald-300 fill-none';
+
+                    card.innerHTML = `
+                        <img src="${imgSrc}" alt="${game.name}" onerror="this.onerror=null; this.src='${generateFallbackCard(game.name, game.category)}';" class="w-full h-full object-cover">
+
+                        <div class="absolute top-2.5 right-2.5 z-20 ${isFav ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300">
+                            <button onclick="toggleFavorite(event, ${game.id})" class="p-2 rounded-full bg-black/70 backdrop-blur-md border border-theme transition-all duration-300 hover:bg-black/90 hover:scale-110 shadow-[0_0_10px_rgba(0,0,0,0.8)]">
+                                <svg class="w-4 h-4 ${starColor} transition-colors" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3.5 z-10">
+                            <div class="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                                <h4 class="thin-title text-sm sm:text-base font-medium text-emerald-50 truncate tracking-wide" style="text-shadow: 0 2px 8px rgba(0,0,0,1), 0 0 12px rgba(0,0,0,0.9);">${game.name}</h4>
+                                <div class="text-[10px] sm:text-xs text-theme-dim font-light uppercase tracking-wider mt-0.5" style="text-shadow: 0 2px 4px rgba(0,0,0,1);">${game.category}</div>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+
+            const noResults = document.getElementById('no-results');
+            if (noResults) {
+                noResults.classList.toggle('hidden', visibleCount > 0);
+                if (visibleCount === 0) {
+                    const titleEl = document.getElementById('no-results-title');
+                    const descEl = document.getElementById('no-results-desc');
+                    if (currentCategory === 'favorites') {
+                        if (titleEl) titleEl.innerText = "No Favorites Saved";
+                        if (descEl) descEl.innerText = "Click the star icon on any game card to add it to your favorites!";
+                    } else {
+                        if (titleEl) titleEl.innerText = "No Games Found";
+                        if (descEl) descEl.innerText = "Try searching for another keyword or clear your filter.";
+                    }
+                }
+            }
+        }
+
+        function renderVideos() {
+            const grid = document.getElementById('videos-grid');
+            if (!grid) return;
+            grid.innerHTML = '';
+
+            const searchQuery = document.getElementById('video-search')?.value.toLowerCase() || '';
+            let visibleCount = 0;
+
+            videoDatabase.forEach(video => {
+                const isFav = videoFavorites.includes(Number(video.id));
+                const matchesCategory = currentVideoCategory === 'all' || 
+                                        (currentVideoCategory === 'favorites' && isFav) || 
+                                        video.category === currentVideoCategory;
+                const matchesSearch = video.name.toLowerCase().includes(searchQuery) || video.category.toLowerCase().includes(searchQuery);
+
+                if (matchesCategory && matchesSearch) {
+                    visibleCount++;
+                    const card = document.createElement('div');
+                    card.className = 'video-card group';
+                    
+                    card.onclick = () => openVideo(video);
+
+                    const imgSrc = video.src && video.src.trim() !== "" ? video.src : generateFallbackBanner(video.name, video.category);
+                    const starColor = isFav ? 'text-theme-accent fill-theme-accent' : 'text-emerald-100 hover:text-emerald-300 fill-none';
+
+                    card.innerHTML = `
+                        <img src="${imgSrc}" alt="${video.name}" onerror="this.onerror=null; this.src='${generateFallbackBanner(video.name, video.category)}';" class="w-full h-full object-cover">
+
+                        <div class="absolute top-2.5 right-2.5 z-20 ${isFav ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-300">
+                            <button onclick="toggleVideoFavorite(event, ${video.id})" class="p-2 rounded-full bg-black/70 backdrop-blur-md border border-theme transition-all duration-300 hover:bg-black/90 hover:scale-110 shadow-[0_0_10px_rgba(0,0,0,0.8)]">
+                                <svg class="w-4 h-4 ${starColor} transition-colors" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-4 z-10">
+                            <div class="flex justify-start">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-medium bg-emerald-950/80 border border-theme text-theme-accent uppercase tracking-wider backdrop-blur-md">
+                                    ${video.category}
+                                </span>
+                            </div>
+                            <div class="transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300 text-center">
+                                <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-black/60 border border-theme flex items-center justify-center text-theme-accent shadow-[0_0_15px_rgba(0,255,170,0.4)]">
+                                    <svg class="w-6 h-6 fill-current ml-0.5" viewBox="0 0 24 24">
+                                        <polygon points="5,3 19,12 5,21"></polygon>
+                                    </svg>
+                                </div>
+                                <h4 class="thin-title text-sm sm:text-base font-medium text-emerald-50 truncate tracking-wide" style="text-shadow: 0 2px 8px rgba(0,0,0,1);">${video.name}</h4>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                }
+            });
+
+            const noResults = document.getElementById('no-video-results');
+            if (noResults) {
+                noResults.classList.toggle('hidden', visibleCount > 0);
+                if (visibleCount === 0) {
+                    const titleEl = document.getElementById('no-video-results-title');
+                    const descEl = document.getElementById('no-video-results-desc');
+                    if (currentVideoCategory === 'favorites') {
+                        if (titleEl) titleEl.innerText = "No Favorite Videos";
+                        if (descEl) descEl.innerText = "Click the star icon on any movie banner to add it to your favorites!";
+                    } else {
+                        if (titleEl) titleEl.innerText = "No Videos Found";
+                        if (descEl) descEl.innerText = "Try searching for another keyword or clear your filter.";
+                    }
+                }
+            }
+        }
+
+        function filterGames() { renderGallery(); }
+        function filterVideos() { renderVideos(); }
+
+        function setCategory(cat) {
+            document.querySelectorAll('#gallery-view .category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const activeBtn = Array.from(document.querySelectorAll('#gallery-view .category-btn')).find(btn => btn.textContent.toLowerCase() === (cat === 'all' ? 'all games' : cat.toLowerCase()));
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+
+            currentCategory = cat;
+            renderGallery();
+        }
+
+        function setVideoCategory(cat) {
+            document.querySelectorAll('.video-category-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            const activeBtn = Array.from(document.querySelectorAll('.video-category-btn')).find(btn => btn.textContent.toLowerCase() === (cat === 'all' ? 'all videos' : cat.toLowerCase()));
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+
+            currentVideoCategory = cat;
+            renderVideos();
+        }
+
+        function openGame(game) {
+            if (!game.url || game.url.trim() === "") {
+                alert("This game slot is coming soon!");
+                return;
+            }
+
+            currentGame = game;
+            document.getElementById('player-game-title').innerText = game.name;
+            const iframe = document.getElementById('game-iframe');
+            iframe.src = game.url;
+
+            document.getElementById('game-player-modal').classList.remove('hidden');
+        }
+
+        function openVideo(video) {
+            if (!video.url || video.url.trim() === "") {
+                alert("This video slot is coming soon!");
+                return;
+            }
+
+            let finalUrl = video.url.trim();
+
+            if (finalUrl.includes('drive.google.com')) {
+                finalUrl = finalUrl.replace(/\/view(\?.*)?$/, '/preview')
+                                   .replace(/\/edit(\?.*)?$/, '/preview');
+                if (!finalUrl.endsWith('/preview') && !finalUrl.includes('/preview?')) {
+                    finalUrl = finalUrl.replace(/\/?$/, '/preview');
+                }
+            }
+
+            currentGame = { name: video.name, url: finalUrl };
+            document.getElementById('player-game-title').innerText = video.name;
+            const iframe = document.getElementById('game-iframe');
+            iframe.src = finalUrl;
+
+            document.getElementById('game-player-modal').classList.remove('hidden');
+        }
+
+        function closeGamePlayer() {
+            const modal = document.getElementById('game-player-modal');
+            const iframe = document.getElementById('game-iframe');
+            iframe.src = ''; 
+            modal.classList.add('hidden');
+            currentGame = null;
+        }
+
+        function toggleGameFullscreen() {
+            const container = document.getElementById('iframe-container') || document.getElementById('game-iframe');
+            if (container.requestFullscreen) {
+                container.requestFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen();
+            } else if (container.msRequestFullscreen) {
+                container.msRequestFullscreen();
+            }
+        }
+
+        function openCurrentInAboutBlank() {
+            if (!currentGame || !currentGame.url) return;
+
+            const win = window.open('about:blank', '_blank');
+            if (!win) {
+                alert("Pop-up blocked! Check the address bar to allow pop-ups for this page.");
+                return;
+            }
+
+            win.document.body.style.margin = '0';
+            win.document.body.style.height = '100vh';
+            win.document.body.style.overflow = 'hidden';
+            win.document.body.style.backgroundColor = '#000';
+
+            const iframe = win.document.createElement('iframe');
+            iframe.style.border = 'none';
+            iframe.style.width = '100vw';
+            iframe.style.height = '100vh';
+            iframe.style.margin = '0';
+            iframe.src = currentGame.url;
+
+            win.document.body.appendChild(iframe);
+        }
+
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        const particles = [];
+        for (let i = 0; i < 50; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 2.2 + 0.8,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4 - 0.2,
+                alpha: Math.random() * 0.6 + 0.15
+            });
+        }
+
+        function animateParticles() {
+            if (userSettings.particles) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                const activeTheme = themePresets.find(t => t.id === userSettings.theme) || themePresets[0];
+                particles.forEach(p => {
+                    p.x += p.vx; p.y += p.vy;
+                    if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                        p.x = Math.random() * canvas.width; p.y = Math.random() * canvas.height;
+                    }
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = activeTheme.accent;
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fill();
+                });
+            } else {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        const cursorGlow = document.getElementById('cursor-glow');
+        document.addEventListener('mousemove', (e) => {
+            if (userSettings.cursorGlow && cursorGlow) {
+                cursorGlow.style.left = `${e.clientX}px`;
+                cursorGlow.style.top = `${e.clientY}px`;
+            }
+        });
+
+        window.onload = function() {
+            applySettings();
+            renderGallery();
+            renderVideos();
+            animateParticles();
+        };
+    </script>
+</body>
+</html>
